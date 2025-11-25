@@ -115,15 +115,19 @@ export class Cuestionario {
 
   /**
    * Carga las preguntas del cuestionario
+   * Las preguntas deben venir ya ordenadas desde el repositorio
    */
   public cargarPreguntas(preguntas: Pregunta[]): void {
-    this._preguntas = preguntas.sort((a, b) => {
-      // Ordenar por bloque y luego por orden
-      if (a.bloque === b.bloque) {
-        return a.orden - b.orden;
-      }
-      return a.bloque.localeCompare(b.bloque);
-    });
+    // NO reordenar aquí - mantener el orden del repositorio
+    this._preguntas = preguntas;
+  }
+
+  /**
+   * Carga respuestas desde persistencia sin validación
+   * Usado solo al recuperar cuestionario de BD
+   */
+  public cargarRespuestasSinValidacion(respuestas: Respuesta[]): void {
+    this._respuestas = respuestas;
   }
 
   /**
@@ -203,6 +207,17 @@ export class Cuestionario {
       throw new Error('El cuestionario no está completo');
     }
     this._estado = EstadoCuestionario.COMPLETADO;
+  }
+
+  /**
+   * Revierte el cuestionario a estado EN_PROGRESO
+   * Usado cuando se edita una respuesta después de completado
+   */
+  public revertirAEnProgreso(): void {
+    if (this._estado !== EstadoCuestionario.COMPLETADO) {
+      throw new Error('Solo se puede revertir desde estado COMPLETADO');
+    }
+    this._estado = EstadoCuestionario.EN_PROGRESO;
   }
 
   /**

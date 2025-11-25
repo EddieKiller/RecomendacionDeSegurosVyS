@@ -44,6 +44,11 @@ class EstadoEnProgreso implements CuestionarioState {
 
   async manejarAccion(contexto: GestionarCuestionario, accion: string, datos?: any): Promise<any> {
     switch (accion) {
+      case 'cargar_preguntas':
+        // Permitir recargar preguntas si es necesario (ej: después de recuperar de BD)
+        await contexto.cargarPreguntasInterno();
+        return { success: true, mensaje: 'Preguntas cargadas' };
+      
       case 'responder':
         return await contexto.responderPreguntaInterno(datos);
       
@@ -51,10 +56,15 @@ class EstadoEnProgreso implements CuestionarioState {
         return contexto.obtenerSiguientePreguntaInterno();
       
       case 'editar_respuesta':
-        return await contexto.editarRespuestaInterno(datos);
+        return await contexto.editarRespuestaInterno({
+          idPregunta: datos.idPregunta,
+          nuevoValor: datos.valor
+        });
       
       case 'completar':
         if (contexto.getCuestionario().estaCompleto()) {
+          contexto.getCuestionario().completar();
+          await contexto.updateEstadoCuestionario(EstadoCuestionario.COMPLETADO);
           contexto.cambiarEstado(new EstadoCompletado());
           return { success: true, mensaje: 'Cuestionario completado exitosamente' };
         }
@@ -82,7 +92,15 @@ class EstadoCompletado implements CuestionarioState {
       case 'editar_respuesta':
         // Permitir edición incluso después de completado
         contexto.cambiarEstado(new EstadoEnProgreso());
-        return await contexto.editarRespuestaInterno(datos);
+        // Cambiar el estado del modelo también usando método público
+        if (contexto.getCuestionario().estado === EstadoCuestionario.COMPLETADO) {
+          contexto.getCuestionario().revertirAEnProgreso();
+          await contexto.updateEstadoCuestionario(EstadoCuestionario.EN_PROGRESO);
+        }
+        return await contexto.editarRespuestaInterno({
+          idPregunta: datos.idPregunta,
+          nuevoValor: datos.valor
+        });
       
       default:
         throw new Error(`Acción '${accion}' no permitida en estado Completado`);
@@ -137,6 +155,23 @@ export class GestionarCuestionario {
   }
 
   /**
+   * Carga un cuestionario existente en el contexto del useCase
+   */
+  public async cargarCuestionarioExistente(cuestionario: Cuestionario): Promise<void> {
+    console.log(`[GestionarCuestionario] Cargando cuestionario existente ID: ${cuestionario.idCuestionario}`);
+    this.cuestionario = cuestionario;
+    
+    // Sincronizar estado interno
+    if (cuestionario.estado === EstadoCuestionario.INICIADO) {
+      this.cambiarEstado(new EstadoIniciado());
+    } else if (cuestionario.estado === EstadoCuestionario.EN_PROGRESO) {
+      this.cambiarEstado(new EstadoEnProgreso());
+    } else if (cuestionario.estado === EstadoCuestionario.COMPLETADO) {
+      this.cambiarEstado(new EstadoCompletado());
+    }
+  }
+
+  /**
    * Inicia un nuevo cuestionario para un usuario
    */
   public async iniciarCuestionario(rut: string): Promise<Cuestionario> {
@@ -148,12 +183,19 @@ export class GestionarCuestionario {
       throw new Error(`Usuario con RUT ${rut} no encontrado`);
     }
 
-    // Verificar si ya tiene un cuestionario activo
+    // Verificar si ya tiene un cuestionario activo (no completado)
     const cuestionarioActivo = await this.cuestionarioRepo.findActivoByUsuario(rut);
-    if (cuestionarioActivo) {
-      console.log('[GestionarCuestionario] Usuario ya tiene cuestionario activo');
+    if (cuestionarioActivo && cuestionarioActivo.estado !== EstadoCuestionario.COMPLETADO) {
+      console.log(`[GestionarCuestionario] Usuario ya tiene cuestionario activo en estado: ${cuestionarioActivo.estado}`);
       this.cuestionario = cuestionarioActivo;
-      this.cambiarEstado(new EstadoEnProgreso());
+      
+      // Sincronizar el estado interno del useCase con el estado del cuestionario
+      if (cuestionarioActivo.estado === EstadoCuestionario.INICIADO) {
+        this.cambiarEstado(new EstadoIniciado());
+      } else if (cuestionarioActivo.estado === EstadoCuestionario.EN_PROGRESO) {
+        this.cambiarEstado(new EstadoEnProgreso());
+      }
+      
       return cuestionarioActivo;
     }
 
@@ -248,7 +290,7 @@ export class GestionarCuestionario {
   /**
    * Edita una respuesta existente (uso interno)
    */
-  public async editarRespuestaInterno(datos: { idPregunta: number; nuevoValor: string }): Promise<void> {
+  public async editarRespuestaInterno(datos: { idPregunta: number; nuevoValor: string }): Promise<{ success: boolean; mensaje: string }> {
     if (!this.cuestionario) {
       throw new Error('No hay cuestionario iniciado');
     }
@@ -271,6 +313,8 @@ export class GestionarCuestionario {
     await this.cuestionarioRepo.saveRespuesta(respuestaExistente);
     
     console.log('[GestionarCuestionario] Respuesta editada exitosamente');
+    
+    return { success: true, mensaje: 'Respuesta editada exitosamente' };
   }
 
   /**
@@ -295,6 +339,20 @@ export class GestionarCuestionario {
       throw new Error('No hay cuestionario iniciado');
     }
     return this.cuestionario;
+  }
+
+  /**
+   * Actualiza el estado del cuestionario en la base de datos
+   * Método público para uso de los estados del patrón State
+   */
+  public async updateEstadoCuestionario(nuevoEstado: EstadoCuestionario): Promise<void> {
+    if (!this.cuestionario) {
+      throw new Error('No hay cuestionario iniciado');
+    }
+    await this.cuestionarioRepo.updateEstado(
+      this.cuestionario.idCuestionario!,
+      nuevoEstado
+    );
   }
 
   /**

@@ -5,7 +5,13 @@
 	"scripts": {
 		"dev": "next dev",
 		"build": "next build",
-		"start": "next start"
+		"start": "next start",
+		"test": "vitest",
+		"test:ui": "vitest --ui",
+		"test:coverage": "vitest --coverage",
+		"test:run": "vitest run",
+		"locust": "locust -f locustfile.py --host=http://localhost:3000",
+		"locust:headless": "locust -f locustfile.py --host=http://localhost:3000 --users 50 --spawn-rate 10 --run-time 2m --headless"
 	},
 	"dependencies": {
 		"next": "^14.2.33",
@@ -19,6 +25,9 @@
 		"@types/react": "^18.3.27",
 		"@types/react-dom": "^18.3.7",
 		"typescript": "^5.9.3",
-		"@types/mysql": "^2.15.21"
+		"@types/mysql": "^2.15.21",
+		"vitest": "^1.0.4",
+		"@vitest/ui": "^1.0.4",
+		"@vitest/coverage-v8": "^1.0.4"
 	}
 }

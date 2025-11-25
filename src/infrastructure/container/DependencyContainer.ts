@@ -94,6 +94,13 @@ export class DependencyContainer {
   }
 
   /**
+   * Obtiene el adaptador del repositorio de cuestionarios
+   */
+  public getCuestionarioRepository(): CuestionarioRepoAdapter {
+    return this.cuestionarioRepoAdapter;
+  }
+
+  /**
    * Obtiene el adaptador de MySQL (para operaciones directas si es necesario)
    */
   public getMySQLAdapter(): MySQLAdapter {

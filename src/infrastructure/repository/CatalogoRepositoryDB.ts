@@ -2,6 +2,7 @@ import { Seguro } from '../../domain/model/Seguro';
 import { CatalogoRepository } from '../../domain/port/repositorio/CatalogoRepository';
 import { TipoSeguro } from '../../domain/types/enums';
 import { MySQLAdapter } from '../../application/adapters/database/MySQLAdapter';
+import { unstable_cache } from 'next/cache';
 
 export class CatalogoRepositoryDB implements CatalogoRepository {
   private db: MySQLAdapter;
@@ -11,8 +12,17 @@ export class CatalogoRepositoryDB implements CatalogoRepository {
   }
 
   async getAllSeguros(): Promise<Seguro[]> {
-    const sql = 'SELECT * FROM SEGURO';
-    const rows = await this.db.query<any>(sql);
+    // Cache de seguros por 30 minutos
+    const getCachedSeguros = unstable_cache(
+      async () => {
+        const sql = 'SELECT * FROM SEGURO';
+        return await this.db.query<any>(sql);
+      },
+      ['seguros-all'],
+      { revalidate: 1800, tags: ['seguros'] }
+    );
+    
+    const rows = await getCachedSeguros();
 
     return rows.map(row => Seguro.create({
       idSeguro: row.id_seguro,
@@ -96,8 +106,17 @@ export class CatalogoRepositoryDB implements CatalogoRepository {
   }
 
   async getAllAseguradoras(): Promise<Array<{ id: number; nombre: string; rutEmpresa: string; }>> {
-    const sql = 'SELECT * FROM ASEGURADORA';
-    const rows = await this.db.query<any>(sql);
+    // Cache de aseguradoras por 1 hora
+    const getCachedAseguradoras = unstable_cache(
+      async () => {
+        const sql = 'SELECT * FROM ASEGURADORA';
+        return await this.db.query<any>(sql);
+      },
+      ['aseguradoras-all'],
+      { revalidate: 3600, tags: ['aseguradoras'] }
+    );
+    
+    const rows = await getCachedAseguradoras();
 
     return rows.map(row => ({
       id: row.id_aseguradora,
