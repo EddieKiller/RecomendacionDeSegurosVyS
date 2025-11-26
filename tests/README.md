@@ -1,5 +1,65 @@
 # Sistema de Recomendación de Seguros - Testing
 
+### **Prompts**
+- **Prompt1 (Estructura de Carpetas)**: Haz un refactor de modo que mi arquitectura quede con la siguiente estructura, añade los archivos vacíos y queda a la espera de las siguientes instrucciones
+
+RecomendacionDeSegurosVyS/
+├─ app/
+│  ├─ cuestionario/page.tsx              # SSR: orquesta CU-2
+│  ├─ recomendaciones/page.tsx           # SSR: orquesta CU-3/CU-4
+│  └─ layout.tsx
+├─ src/
+│  ├─ application/
+│  │  ├─ usecase/
+│  │  │  ├─ GestionarCuestionario.ts     # CU-2 (RF-002): generación + adaptación + validación + edición
+│  │  │  ├─ EvaluarPerfilRiesgo.ts       # CU-3 (RF-003)
+│  │  │  └─ GenerarRecomendaciones.ts    # CU-4 (RF-003: ranking + justificabilidad)
+│  │  └─ adapters/
+│  │     ├─ repositorio/UsuarioRepoAdapter.ts
+│  │     ├─ repositorio/CuestionarioRepoAdapter.ts
+│  │     ├─ repositorio/CatalogoRepoAdapter.ts
+│  │     └─ database/MySQLAdapter.ts
+│  ├─ domain/
+│  │  ├─ model/
+│  │  │  ├─ Usuario.ts
+│  │  │  ├─ Cuestionario.ts
+│  │  │  ├─ Pregunta.ts
+│  │  │  ├─ Respuesta.ts
+│  │  │  ├─ PerfilRiesgo.ts
+│  │  │  └─ Seguro.ts
+│  │  └─ port/
+│  │     ├─ repositorio/UsuarioRepository.ts
+│  │     ├─ repositorio/CuestionarioRepository.ts
+│  │     ├─ repositorio/CatalogoRepository.ts
+│  │     └─ externo/RegistroCivilPort.ts  # (mockeado desde BD según restricciones)
+│  ├─ infrastructure/repository/
+│  │  ├─ UsuarioRepositoryDB.ts
+│  │  ├─ CuestionarioRepositoryDB.ts
+│  │  └─ CatalogoRepositoryDB.ts
+│  └─ interfaces/presenters/              # (opcional) helpers para UI
+├─ package.json
+└─ tsconfig.json
+
+- **Prompt 2(Generacion de codigo con contexto)**: Actúa como un arquitecto de software con 10 años de experiencia en diseño de sistemas, patrones de diseño y desarrollo full stack.
+
+En base a la estructura del proyecto que ya tengo, lee todos los archivos que te entregué previamente y analiza cómo se relacionan las tecnologías con los patrones de diseño y con las distintas capas de la arquitectura.
+
+Tu tarea será desarrollar todo el código del proyecto completo, manteniendo coherencia con la arquitectura existente.
+
+Antes de generar cualquier código, primero debes:
+
+Explicarme detalladamente cómo realizarás el trabajo.
+
+Indicar qué restricciones tomarás en cuenta.
+
+Describir los pasos específicos que seguirás para construir el proyecto de manera ordenada.
+
+Una vez que presentes este plan, debes pedir mi permiso para continuar.
+No avances a la generación de código hasta que yo lo autorice.
+
+Contexto para este prompt: RF y RNF-002 + CasosDeUso.txt; Tecnologias a usar.txt; DiagramasMermaid.txt; PatronesDeDiseño.txt (ejemplos de uso); Preguntas Formulario.txt RefactorHexagonalBase.txt BDSeguros.sql
+
+
 ## 🏗️ Arquitectura del Proyecto
 
 Este proyecto implementa **Arquitectura Hexagonal (Ports & Adapters)** con los siguientes principios:
@@ -286,63 +346,3 @@ locustfile.py (Locust)
 - Opción 1: Batch insert para auto-completado
 - Opción 2: Ejecución paralela con Promise.all
 - Opción 3: Eliminar auto-completado (solo para testing)
-
-
-**Prompts**
-- Prompt1 (Estructura de Carpetas): Haz un refactor de modo que mi arquitectura quede con la siguiente estructura, añade los archivos vacíos y queda a la espera de las siguientes instrucciones
-
-RecomendacionDeSegurosVyS/
-├─ app/
-│  ├─ cuestionario/page.tsx              # SSR: orquesta CU-2
-│  ├─ recomendaciones/page.tsx           # SSR: orquesta CU-3/CU-4
-│  └─ layout.tsx
-├─ src/
-│  ├─ application/
-│  │  ├─ usecase/
-│  │  │  ├─ GestionarCuestionario.ts     # CU-2 (RF-002): generación + adaptación + validación + edición
-│  │  │  ├─ EvaluarPerfilRiesgo.ts       # CU-3 (RF-003)
-│  │  │  └─ GenerarRecomendaciones.ts    # CU-4 (RF-003: ranking + justificabilidad)
-│  │  └─ adapters/
-│  │     ├─ repositorio/UsuarioRepoAdapter.ts
-│  │     ├─ repositorio/CuestionarioRepoAdapter.ts
-│  │     ├─ repositorio/CatalogoRepoAdapter.ts
-│  │     └─ database/MySQLAdapter.ts
-│  ├─ domain/
-│  │  ├─ model/
-│  │  │  ├─ Usuario.ts
-│  │  │  ├─ Cuestionario.ts
-│  │  │  ├─ Pregunta.ts
-│  │  │  ├─ Respuesta.ts
-│  │  │  ├─ PerfilRiesgo.ts
-│  │  │  └─ Seguro.ts
-│  │  └─ port/
-│  │     ├─ repositorio/UsuarioRepository.ts
-│  │     ├─ repositorio/CuestionarioRepository.ts
-│  │     ├─ repositorio/CatalogoRepository.ts
-│  │     └─ externo/RegistroCivilPort.ts  # (mockeado desde BD según restricciones)
-│  ├─ infrastructure/repository/
-│  │  ├─ UsuarioRepositoryDB.ts
-│  │  ├─ CuestionarioRepositoryDB.ts
-│  │  └─ CatalogoRepositoryDB.ts
-│  └─ interfaces/presenters/              # (opcional) helpers para UI
-├─ package.json
-└─ tsconfig.json
-
-- Prompt 2(Generacion de codigo con contexto): Actúa como un arquitecto de software con 10 años de experiencia en diseño de sistemas, patrones de diseño y desarrollo full stack.
-
-En base a la estructura del proyecto que ya tengo, lee todos los archivos que te entregué previamente y analiza cómo se relacionan las tecnologías con los patrones de diseño y con las distintas capas de la arquitectura.
-
-Tu tarea será desarrollar todo el código del proyecto completo, manteniendo coherencia con la arquitectura existente.
-
-Antes de generar cualquier código, primero debes:
-
-Explicarme detalladamente cómo realizarás el trabajo.
-
-Indicar qué restricciones tomarás en cuenta.
-
-Describir los pasos específicos que seguirás para construir el proyecto de manera ordenada.
-
-Una vez que presentes este plan, debes pedir mi permiso para continuar.
-No avances a la generación de código hasta que yo lo autorice.
-
-Contexto para este prompt: RF y RNF-002 + CasosDeUso.txt; Tecnologias a usar.txt; DiagramasMermaid.txt; PatronesDeDiseño.txt (ejemplos de uso); Preguntas Formulario.txt RefactorHexagonalBase.txt BDSeguros.sql
